@@ -1,0 +1,48 @@
+name: swagger
+
+on:
+  workflow_dispatch:
+    inputs:
+      portainer_version:
+        description: 'Portainer Version'
+        required: true
+
+env:
+  SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
+  SWAGGERHUB_URL: 'https://api.swaggerhub.com'
+
+jobs:
+  swagger:
+    runs-on: ubuntu-latest
+    steps:
+    - name: '[preparation] Checkout the Current Branch'
+      uses: actions/checkout@v3
+    - name: '[preparation] set up golang 1.19.5'
+      uses: actions/setup-go@v4.0.1
+      with:
+        go-version: '1.19.5'
+    - name: '[preparation] set up node.js 18.x'
+      uses: actions/setup-node@v2.5.2
+      with:
+        node-version: '18.x'
+    - name: '[preparation] install swag v1.8.7'
+      shell: bash
+      run: |
+        go install github.com/swaggo/swag/cmd/swag@v1.8.7
+    - name: '[preparation] install swaggerhub-cli'
+      shell: bash
+      run: |
+        npm i -g swaggerhub-cli
+        swaggerhub --version
+    - name: '[execution] generate a swagger document'
+      shell: bash
+      run: |
+        go mod tidy
+        ~/go/bin/swag init -g ./http/handler/handler.go --parseDependency --parseInternal --parseDepth 2 --markdownFiles ./
+      working-directory: './api'
+    - name: '[execution] upload the swagger document'
+      shell: bash
+      run: |
+        cat swagger.yaml
+        # swaggerhub api:create portainer/portainer-ce/${{ github.event.inputs.portainer_version }} --file swagger.yaml --visibility public
+      working-directory: './api/docs'
