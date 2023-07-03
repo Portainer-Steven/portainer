@@ -61,6 +61,7 @@ jobs:
         run: |
           if [ "${{ matrix.config.platform }}" == "windows" ]; then
             CONTAINER_IMAGE_TAG="${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}${{ matrix.config.version }}-${{ matrix.config.arch }}"
+            mv dist/portainer dist/portainer.exe
             docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} --build-arg OSVERSION=${{ matrix.config.version }} -t "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}" -f build/${{ matrix.config.platform }}/Dockerfile .
           else 
             CONTAINER_IMAGE_TAG="${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}-${{ matrix.config.arch }}"
