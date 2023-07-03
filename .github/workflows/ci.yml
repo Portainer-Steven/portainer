@@ -17,17 +17,22 @@ env:
   NODE_ENV: testing
 
 jobs:
-  build_artefacts:
+  build:
     strategy:
       matrix:
         config:
           - { platform: linux, arch: amd64 }
           - { platform: linux, arch: arm64 }
-          - { platform: windows, arch: amd64 }
+          - { platform: windows, arch: amd64, version: 1809 }
+          - { platform: windows, arch: amd64, version: ltsc2022 }
     runs-on: ubuntu-latest
     steps:
       - name: "[preparation] checkout the current branch"
         uses: actions/checkout@v3.5.3
+      - name: "[preparation] extract the branch name"
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
       - name: "[preparation] set up golang 1.19.5"
         uses: actions/setup-go@v4.0.1
         with:
@@ -39,37 +44,10 @@ jobs:
       - name: "[execution] build linux & windows portainer binaries"
         run: |
           make build-all PLATFORM=${{ matrix.config.platform }} ARCH=${{ matrix.config.arch }} ENV=${NODE_ENV}
-      - name: "[post] upload artefact"
-        uses: actions/upload-artifact@v3.1.2
-        with:
-          name: dist_${{ matrix.config.platform }}_${{ matrix.config.arch }}
-          path: dist/*
-
-  build_images:
-    needs: [ build_artefacts ]
-    strategy:
-      matrix:
-        config:
-          - { platform: linux, arch: amd64 }
-          - { platform: linux, arch: arm64 }
-          - { platform: windows,arch: amd64, version: 1809 }
-          - { platform: windows,arch: amd64, version: ltsc2022 }
-    runs-on: ubuntu-latest
-    steps:
-      - name: "[preparation] checkout the current branch"
-        uses: actions/checkout@v3.5.3
-      - name: "[preparation] extract the branch name"
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: extract_branch
       - name: "[preparation] set up qemu"
         uses: docker/setup-qemu-action@v2
       - name: "[preparation] set up docker buildx"
         uses: docker/setup-buildx-action@v2
-      - name: "[preparation] download artifact"
-        uses: actions/download-artifact@v3.0.2
-        with:
-          name: dist_${{ matrix.config.platform }}_${{ matrix.config.arch }}
       - name: "[preparation] docker login"
         uses: docker/login-action@v2.2.0
         with:
@@ -80,7 +58,6 @@ jobs:
           if: github.event.pull_request.labels.name == ''
           CONTAINER_IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}
         run: |
-          ls -latrh
           if [ "${{ matrix.config.platform }}" == "windows" ]; then
             CONTAINER_IMAGE_TAG="${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}${{ matrix.config.version }}-${{ matrix.config.arch }}"
           else 
@@ -89,5 +66,3 @@ jobs:
           fi
           
           docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}" -f build/${{ matrix.config.platform }}/Dockerfile .
-
-          docker image ls
