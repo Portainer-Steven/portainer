@@ -12,6 +12,7 @@ on:
   #     - "*"
 
 env:
+  DOCKER_HUB_REPO: ssbkang/portainer-ce
   CONTINAER_IMAGE_TAG: pr${{ github.event.pull_request.labels.name }}
   NODE_ENV: testing
 
@@ -37,11 +38,11 @@ jobs:
           node-version: "18.x"
       - name: "[execution] build linux & windows portainer binaries"
         run: |
-          make build-all PLATFORM=${{ matrix.platform }} ARCH=${{ matrix.arch }} ENV=${NODE_ENV}
+          make build-all PLATFORM=${{ matrix.config.platform }} ARCH=${{ matrix.config.arch }} ENV=${NODE_ENV}
       - name: "[post] upload artefact"
         uses: actions/upload-artifact@v3.1.2
         with:
-          name: dist_${{ matrix.platform }}_${{ matrix.arch }}
+          name: dist_${{ matrix.config.platform }}_${{ matrix.config.arch }}
           path: dist/*
 
   build_images:
@@ -68,12 +69,12 @@ jobs:
       - name: "[preparation] download artifact"
         uses: actions/download-artifact@v3.0.2
         with:
-          name: dist_${{ matrix.platform }}_${{ matrix.arch }}
-      # - name: "[preparation] docker login"
-      #   uses: docker/login-action@v2.2.0
-      #   with:
-      #     username: ${{ secrets.DOCKER_HUB_USERNAME }}
-      #     password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          name: dist_${{ matrix.config.platform }}_${{ matrix.config.arch }}
+      - name: "[preparation] docker login"
+        uses: docker/login-action@v2.2.0
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
       - name: "[execution] build docker images"
         env:
           if: github.event.pull_request.labels.name == ''
@@ -84,9 +85,9 @@ jobs:
             CONTAINER_IMAGE_TAG="${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}${{ matrix.config.version }}-${{ matrix.config.arch }}"
           else 
             CONTAINER_IMAGE_TAG="${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}-${{ matrix.config.arch }}"
-            docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "portainerci/portainer-ce:${CONTAINER_IMAGE_TAG}-alpine" -f build/${{ matrix.config.platform }}/alpine.Dockerfile .
+            docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-alpine" -f build/${{ matrix.config.platform }}/alpine.Dockerfile .
           fi
           
-          docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "portainerci/portainer-ce:${CONTAINER_IMAGE_TAG}" -f build/${{ matrix.config.platform }}/Dockerfile .
+          docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}" -f build/${{ matrix.config.platform }}/Dockerfile .
 
           docker image ls
