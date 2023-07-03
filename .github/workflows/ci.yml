@@ -92,11 +92,5 @@ jobs:
           if: github.event.pull_request.labels.name == ''
           CONTAINER_IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}
         run: |
-          docker manifest create "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}" \
+          docker buildx imagetools create -t "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}" \
             "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-linux-amd64"
-            #  \
-            # "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-linux-arm64" \
-            # "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-windows1809-amd64" \
-            # "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-windowsltsc2022-amd64"
-
-          docker manifest push "${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}"
