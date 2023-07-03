@@ -38,13 +38,12 @@ jobs:
         uses: actions/setup-go@v4.0.1
         with:
           go-version: "1.19.5"
+          cache-dependency-path: ./api/go.sum
       - name: "[preparation] set up node.js 18.x"
         uses: actions/setup-node@v2.5.2
         with:
           node-version: "18.x"
-      - name: "[execution] build linux & windows portainer binaries"
-        run: |
-          make build-all PLATFORM=${{ matrix.config.platform }} ARCH=${{ matrix.config.arch }} ENV=${NODE_ENV}
+          cache: 'npm'
       - name: "[preparation] set up qemu"
         uses: docker/setup-qemu-action@v2
       - name: "[preparation] set up docker buildx - v0.10.5"
@@ -56,6 +55,9 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+      - name: "[execution] build linux & windows portainer binaries"
+        run: |
+          make build-all PLATFORM=${{ matrix.config.platform }} ARCH=${{ matrix.config.arch }} ENV=${NODE_ENV}
       - name: "[execution] build docker images"
         env:
           if: github.event.pull_request.labels.name == ''
