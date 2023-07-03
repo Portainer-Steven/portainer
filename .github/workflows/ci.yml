@@ -45,6 +45,7 @@ jobs:
           path: dist/*
 
   build_images:
+    needs: [ build_artefacts ]
     strategy:
       matrix:
         config:
@@ -89,3 +90,32 @@ jobs:
           docker buildx build --load --platform ${{ matrix.config.platform }}/${{ matrix.config.arch }} -t "portainerci/portainer-ce:${CONTAINER_IMAGE_TAG}" -f build/${{ matrix.config.platform }}/Dockerfile .
 
           docker image ls
+  
+  build_manifests:
+    runs-on: ubuntu-18.04
+    needs: build_images
+    steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Docker Login
+        uses: Azure/docker-login@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          # login-server: # default is https://index.docker.io/v1/
+
+      - name: Build and Push Manifests
+        env:
+          if: github.event.pull_request.labels.name == ''
+          CONTAINER_IMAGE_TAG: ${{ steps.extract_branch.outputs.branch }}
+        run: |
+          sed -i 's/}}/}}, "experimental": "enabled"/g' "${DOCKER_CONFIG}/config.json"
+
+          docker -D manifest create \
+              "ssbkang/portainer:$CONTAINER_IMAGE_TAG" \
+              "ssbkang/portainer:$CONTAINER_IMAGE_TAG-linux-amd64" \
+              "ssbkang/portainer:$CONTAINER_IMAGE_TAG-windows1809-amd64"
+          docker -D manifest push "ssbkang/portainer:$CONTAINER_IMAGE_TAG"
