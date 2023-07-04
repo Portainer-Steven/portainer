@@ -84,6 +84,7 @@ jobs:
           repository: portainer/test-automation
           ssh-key: ${{ secrets.TEST_AUTOMATION_DEPLOYMENT_KEY }}
           ssh-known-hosts: true
+          ref: feat/pipeline/update-ci
       - name: "[preparation] set up node.js 18.x"
         uses: actions/setup-node@v2.5.2
         with:
