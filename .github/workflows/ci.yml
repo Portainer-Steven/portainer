@@ -118,6 +118,7 @@ jobs:
             CYPRESS_TAGS="@smoke+@kube"
           fi
 
+          PORTAINER_IMAGE=${DOCKER_HUB_REPO}:${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}-${{ matrix.config.arch }}
           if [[ "${PORTAINER_IMAGE}" == *"-ee"* ]]; then
             PORTAINER_PRODUCT_VERSION=EE
           else
@@ -127,7 +128,7 @@ jobs:
           # Update the run.env with the right details
           rm -rf run.env && cat << EOF > run.env
           PORTAINER_PRODUCT_VERSION=${PORTAINER_PRODUCT_VERSION}
-          PORTAINER_IMAGE=${CONTAINER_IMAGE_TAG}-${{ matrix.config.platform }}-${{ matrix.config.arch }}
+          PORTAINER_IMAGE=${PORTAINER_IMAGE}
           PORTAINER_AGENT_IMAGE=portainerci/agent:develop
           ACI_APP_ID=${{ secrets.ACI_APP_ID }}
           ACI_TENANT_ID=${{ secrets.ACI_TENANT_ID }}
