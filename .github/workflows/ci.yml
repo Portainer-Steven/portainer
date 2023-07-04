@@ -17,18 +17,18 @@ env:
   NODE_ENV: testing
 
 jobs:
-  # build_images:
-  #   strategy:
-  #     matrix:
-  #       config:
-  #         - { platform: linux, arch: amd64 }
-  #         - { platform: linux, arch: arm64 }
-  #         - { platform: windows, arch: amd64, version: 1809 }
-  #         - { platform: windows, arch: amd64, version: ltsc2022 }
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: "[preparation] checkout the current branch"
-  #       uses: actions/checkout@v3.5.3
+  build_images:
+    strategy:
+      matrix:
+        config:
+          - { platform: linux, arch: amd64 }
+          - { platform: linux, arch: arm64 }
+          - { platform: windows, arch: amd64, version: 1809 }
+          - { platform: windows, arch: amd64, version: ltsc2022 }
+    runs-on: ubuntu-latest
+    steps:
+      - name: "[preparation] checkout the current branch"
+        uses: actions/checkout@v3.5.3
   #     - name: "[preparation] extract the branch name"
   #       shell: bash
   #       run: |
